@@ -1,0 +1,192 @@
+
+package com.khushboo.ai;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.content.Intent;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.widget.*;
+import android.view.Gravity;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import java.util.Locale;
+import java.util.ArrayList;
+
+public class MainActivity extends Activity {
+
+    TextToSpeech voice;
+    TextView output;
+    LinearLayout screen;
+
+    @Override
+    public void onCreate(Bundle b) {
+        super.onCreate(b);
+
+        screen = new LinearLayout(this);
+        screen.setOrientation(1);
+        screen.setGravity(Gravity.CENTER);
+        screen.setPadding(24,24,24,24);
+        screen.setBackgroundColor(Color.rgb(3,8,20));
+
+        TextView title = new TextView(this);
+        title.setText("KHUSHBOO AI");
+        title.setTextColor(Color.CYAN);
+        title.setTextSize(32);
+        title.setTypeface(null,Typeface.BOLD);
+
+        TextView sub = new TextView(this);
+        sub.setText("JARVIS VIP SYSTEM");
+        sub.setTextColor(Color.YELLOW);
+        sub.setTextSize(15);
+
+        output = new TextView(this);
+        output.setText("السلام علیکم! میں خوشبو ہوں۔");
+        output.setTextColor(Color.WHITE);
+        output.setTextSize(18);
+        output.setGravity(Gravity.CENTER);
+
+        Button talk = new Button(this);
+        talk.setText("🎙 TALK TO KHUSHBOO");
+
+        Button yt = new Button(this);
+        yt.setText("OPEN YOUTUBE");
+
+        Button wa = new Button(this);
+        wa.setText("OPEN WHATSAPP");
+
+        Button phone = new Button(this);
+        phone.setText("OPEN PHONE");
+
+        screen.addView(title);
+        screen.addView(sub);
+        addSpace();
+        screen.addView(output);
+        addSpace();
+        screen.addView(talk);
+        screen.addView(yt);
+        screen.addView(wa);
+        screen.addView(phone);
+
+        setContentView(screen);
+
+        voice = new TextToSpeech(this, result -> {
+            if(result == TextToSpeech.SUCCESS) {
+                voice.setLanguage(new Locale("ur","PK"));
+            }
+        });
+
+        talk.setOnClickListener(v -> listen());
+
+        yt.setOnClickListener(v ->
+            openApp("com.google.android.youtube"));
+
+        wa.setOnClickListener(v ->
+            openApp("com.whatsapp"));
+
+        phone.setOnClickListener(v ->
+            startActivity(new Intent(Intent.ACTION_DIAL)));
+    }
+
+    void addSpace() {
+        Space s = new Space(this);
+        screen.addView(s,
+            new LinearLayout.LayoutParams(1,35));
+    }
+
+    void listen() {
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                new String[]{Manifest.permission.RECORD_AUDIO}, 10);
+            return;
+        }
+
+        Intent i = new Intent(
+            RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+
+        i.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+
+        i.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            "ur-PK");
+
+        try {
+            startActivityForResult(i,100);
+            output.setText("سن رہی ہوں...");
+        } catch(Exception e) {
+            output.setText("Voice service دستیاب نہیں۔");
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int r,int c,Intent d) {
+        super.onActivityResult(r,c,d);
+
+        if(r == 100 && c == RESULT_OK && d != null) {
+            ArrayList<String> list =
+                d.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS);
+
+            if(list != null && !list.isEmpty()) {
+                command(list.get(0));
+            }
+        }
+    }
+
+    void command(String c) {
+        String s = c.toLowerCase(Locale.ROOT);
+
+        if(s.contains("youtube") || s.contains("یوٹیوب")) {
+            openApp("com.google.android.youtube");
+            reply("جی، یوٹیوب کھول رہی ہوں۔");
+        }
+        else if(s.contains("whatsapp") || s.contains("واٹس ایپ")) {
+            openApp("com.whatsapp");
+            reply("جی، واٹس ایپ کھول رہی ہوں۔");
+        }
+        else if(s.contains("call") || s.contains("کال")) {
+            reply("جی، فون ڈائلر کھول رہی ہوں۔");
+            startActivity(new Intent(Intent.ACTION_DIAL));
+        }
+        else if(s.contains("سلام") || s.contains("hello")) {
+            reply("وعلیکم السلام! میں خوشبو ہوں۔");
+        }
+        else {
+            reply("جی، میں سن رہی ہوں۔ یہ کمانڈ ابھی سیکھ رہی ہوں۔");
+        }
+    }
+
+    void openApp(String p) {
+        Intent i = getPackageManager().getLaunchIntentForPackage(p);
+
+        if(i != null) startActivity(i);
+        else reply("یہ ایپ انسٹال نہیں ہے۔");
+    }
+
+    void reply(String msg) {
+        output.setText(msg);
+        if(voice != null)
+            voice.speak(msg,TextToSpeech.QUEUE_FLUSH,null,"K1");
+    }
+
+    @Override
+    protected void onDestroy() {
+        if(voice != null) {
+            voice.stop();
+            voice.shutdown();
+        }
+        super.onDestroy();
+    }
+}
+0
+
+ls app/src/main
+ls app/src/main/java/com/khushboo/ai
+
+0
+
